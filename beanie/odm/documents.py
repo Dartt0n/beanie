@@ -464,6 +464,7 @@ class Document(
     async def replace(
         self: DocType,
         ignore_revision: bool = False,
+        use_parent: bool = False,
         session: Optional[ClientSession] = None,
         bulk_writer: Optional[BulkWriter] = None,
         link_rule: WriteRules = WriteRules.DO_NOTHING,
@@ -524,6 +525,14 @@ class Document(
 
         use_revision_id = self.get_settings().use_revision
         find_query: Dict[str, Any] = {"_id": self.id}
+
+        if use_parent and self._parent is not None:
+            find_query["_class_id"] = {
+                "$in": [
+                    self._parent._class_id,
+                ]
+                + list(self._parent._children.keys())
+            }
 
         if use_revision_id and not ignore_revision:
             find_query["revision_id"] = self.revision_id
